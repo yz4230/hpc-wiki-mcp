@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+#MISE description="Build and run the Docker container"
+#MISE depends=["docker:build"]
+
+set -euo pipefail
+
+DOCKER_COMMAND="${DOCKER_COMMAND:-docker}"
+IMAGE_NAME="${IMAGE_NAME:-hpc-wiki-mcp}"
+CONTAINER_NAME="${CONTAINER_NAME:-hpc-wiki-mcp}"
+PORT="${PORT:-${CONTAINER_PORT:-8080}}"
+HOST_PORT="${HOST_PORT:-$PORT}"
+CONTAINER_PORT="${CONTAINER_PORT:-$PORT}"
+
+env_args=()
+if [ -f .env ]; then
+  env_args=(--env-file .env)
+fi
+
+"$DOCKER_COMMAND" run \
+  -p "${HOST_PORT}:${CONTAINER_PORT}" \
+  --name "$CONTAINER_NAME" \
+  --restart unless-stopped \
+  "${env_args[@]}" \
+  -e "PORT=$CONTAINER_PORT" \
+  -d \
+  "$IMAGE_NAME"

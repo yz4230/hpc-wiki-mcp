@@ -12,6 +12,8 @@ Wikiの編集、ファイルのアップロード、認証状態の変更は行�
 ## Requirements
 
 - Go 1.26以降
+- Docker
+- mise
 
 ## Build and test
 
@@ -77,6 +79,19 @@ MCPクライアントの設定例:
 ```
 
 `PORT` 環境変数が設定されている場合は `--port` より優先されます。
+
+## Run with Docker
+
+Dockerイメージのビルドとコンテナ操作には `mise` taskを使用できます。
+
+```bash
+mise run docker:build
+mise run docker:run
+mise run docker:stop
+mise run docker:rm
+```
+
+`docker:run` は `.env` が存在する場合にコンテナへ読み込み、既定でホストとコンテナの `8080` 番ポートを接続します。`HOST_PORT`、`CONTAINER_PORT`、`IMAGE_NAME`、`CONTAINER_NAME` で各値を変更できます。
 
 ## Project layout
 
