@@ -23,18 +23,6 @@ var SearchWikiTool = &mcp.Tool{
 	},
 }
 
-var GetWikiPageTool = &mcp.Tool{
-	Name:        "get_wiki_page",
-	Title:       "Read an HPC Laboratory Wiki Page",
-	Description: "Fetch a DokuWiki page by ID and return its text, headings, links, and source URL. Use search_wiki first when the page ID is unknown.",
-	Annotations: &mcp.ToolAnnotations{
-		ReadOnlyHint:    true,
-		DestructiveHint: new(false),
-		IdempotentHint:  true,
-		OpenWorldHint:   new(true),
-	},
-}
-
 type SearchWikiInput struct {
 	Query string `json:"query" jsonschema:"Japanese or English search query"`
 	Limit int    `json:"limit,omitempty" jsonschema:"Maximum results to return, from 1 to 50; defaults to 10"`
@@ -43,28 +31,6 @@ type SearchWikiInput struct {
 type SearchWikiOutput struct {
 	Query   string              `json:"query"`
 	Results []wiki.SearchResult `json:"results"`
-}
-
-type GetWikiPageInput struct {
-	ID string `json:"id" jsonschema:"DokuWiki page ID, for example life.html or network:remote"`
-}
-
-type GetWikiPageOutput struct {
-	Page *wiki.Page `json:"page"`
-}
-
-type Handler struct {
-	wiki *wiki.Client
-}
-
-func Register(server *mcp.Server, client *wiki.Client) {
-	handler := &Handler{wiki: client}
-	mcp.AddTool(server, SearchWikiTool, handler.SearchWiki)
-	mcp.AddTool(server, GetWikiPageTool, handler.GetWikiPage)
-}
-
-func textResult(text string) *mcp.CallToolResult {
-	return &mcp.CallToolResult{Content: []mcp.Content{&mcp.TextContent{Text: text}}}
 }
 
 func formatSearchContent(query string, results []wiki.SearchResult) string {
@@ -91,16 +57,6 @@ func formatSearchContent(query string, results []wiki.SearchResult) string {
 	return builder.String()
 }
 
-func formatPageContent(page *wiki.Page) string {
-	var builder strings.Builder
-	fmt.Fprintf(&builder, "# %s\n\n", page.Title)
-	fmt.Fprintf(&builder, "page_id: %s\nsource_url: %s\n", page.ID, page.SourceURL)
-	if page.Text != "" {
-		fmt.Fprintf(&builder, "\n%s", page.Text)
-	}
-	return builder.String()
-}
-
 func (h *Handler) SearchWiki(ctx context.Context, _ *mcp.CallToolRequest, input *SearchWikiInput) (*mcp.CallToolResult, *SearchWikiOutput, error) {
 	if input == nil {
 		input = &SearchWikiInput{}
@@ -113,15 +69,4 @@ func (h *Handler) SearchWiki(ctx context.Context, _ *mcp.CallToolRequest, input 
 		Query:   input.Query,
 		Results: results,
 	}, nil
-}
-
-func (h *Handler) GetWikiPage(ctx context.Context, _ *mcp.CallToolRequest, input *GetWikiPageInput) (*mcp.CallToolResult, *GetWikiPageOutput, error) {
-	if input == nil {
-		input = &GetWikiPageInput{}
-	}
-	page, err := h.wiki.GetPage(ctx, input.ID)
-	if err != nil {
-		return nil, nil, err
-	}
-	return textResult(formatPageContent(page)), &GetWikiPageOutput{Page: page}, nil
 }
